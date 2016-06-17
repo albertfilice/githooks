@@ -1,0 +1,38 @@
+#!/bin/bash
+
+current_branch=`git rev-parse --abbrev-ref HEAD`
+push_command=`ps -ocommand= -p $PPID`
+protected_branches="^(master|development)"
+protected_commands="master|development"
+
+# Capture input from the terminal
+exec < /dev/tty
+
+if [[ "$current_branch" =~ $protected_branches ]]; then
+	echo -e "\033[1;31m    When you push to $current_branch, it will deploy to production.\033[0m"
+	echo -e -n "\033[1;31m    Please confirm your intentions by typing Y/y: \033[0m"
+	read -n 1 result
+	echo ""
+	exec <&-
+	if [[ $result =~ ^[Yy]$ ]]; then
+		echo "OK. Pushing..."
+		exit 0
+	else
+		echo "Not going to push..."
+		exit 1
+	fi
+elif [[ "$push_command" =~ $protected_commands ]]; then
+	echo -e "\033[1;31m    You are trying to push to a protected branch from a non-protected branch.\033[0m"
+	echo -e "\033[1;31m    Pushing to a protected branch will deploy to production.\033[0m"
+	echo -e -n "\033[1;31m    Please confirm your intentions by typing Y/y: \033[0m"
+	read -n 1 result
+	echo ""
+	exec <&-
+	if [[ $result =~ ^[Yy]$ ]]; then
+		echo "OK. Pushing..."
+		exit 0
+	else
+		echo "Not going to push..."
+		exit 1
+	fi
+fi
